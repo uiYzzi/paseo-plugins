@@ -83,6 +83,54 @@ export type Dashboard = z.infer<typeof dashboardSchema>;
 export type DashboardProvider = Dashboard["providers"][number];
 export type UsageRow = z.infer<typeof usageRowSchema>;
 
+/**
+ * User-installed provider plugins answer a different command; `dashboard` and
+ * `usage --provider <id>` only know the built-in providers.
+ */
+const pluginUsageSchema = z.object({
+  identity: z
+    .object({ providerID: z.string().optional(), loginMethod: z.string().nullable().optional() })
+    .partial()
+    .optional(),
+  loginMethod: z.string().nullable().optional(),
+  primary: windowSchema.nullable().optional(),
+  secondary: windowSchema.nullable().optional(),
+  tertiary: windowSchema.nullable().optional(),
+  subscriptionRenewsAt: z.string().nullable().optional(),
+  details: z
+    .array(
+      z.object({
+        title: z.string(),
+        rows: z.array(
+          z.object({
+            label: z.string(),
+            value: z.string().nullable().optional(),
+            secondaryValue: z.string().nullable().optional(),
+          }),
+        ),
+      }),
+    )
+    .optional(),
+  providerCost: z
+    .object({
+      used: z.number().nullable().optional(),
+      limit: z.number().nullable().optional(),
+      balance: z.number().nullable().optional(),
+      currencyCode: z.string().nullable().optional(),
+      period: z.string().nullable().optional(),
+    })
+    .partial()
+    .nullable()
+    .optional(),
+});
+
+const configSchema = z.object({
+  providers: z.array(z.object({ id: z.string(), enabled: z.boolean().optional() })),
+});
+
+export type PluginUsage = z.infer<typeof pluginUsageSchema>;
+export type PluginProvider = { id: string; name: string; path: string };
+
 let configuredCliPath = "";
 let dashboardCache: { at: number; value: Dashboard } | null = null;
 let lastUsedCommand: string | null = null;
@@ -159,6 +207,28 @@ function commandArgs(args: string[]): string[] {
   return args;
 }
 
+/** Same candidate walk as `run`, for the startup path where nothing may await. */
+function runSync(args: string[]): string {
+  const candidates = commandCandidates();
+  if (candidates.length === 0) throw missingCommandError(candidates);
+  for (const command of candidates) {
+    try {
+      const stdout = execFileSync(command, args, {
+        encoding: "utf8",
+        timeout: INIT_TIMEOUT_MS,
+        maxBuffer: 16 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      lastUsedCommand = command;
+      return stdout;
+    } catch (error) {
+      if (isMissingBinary(error)) continue;
+      throw new Error(`\`${command} ${args.join(" ")}\` failed: ${messageOf(error)}`);
+    }
+  }
+  throw missingCommandError(candidates);
+}
+
 async function run(args: string[]): Promise<string> {
   const candidates = commandCandidates();
   if (candidates.length === 0) throw missingCommandError(candidates);
@@ -196,26 +266,7 @@ export async function readDashboard(): Promise<Dashboard> {
  * subprocess.
  */
 export function readDashboardSync(): Dashboard {
-  const candidates = commandCandidates();
-  if (candidates.length === 0) throw missingCommandError(candidates);
-  let stdout: string | null = null;
-  for (const command of candidates) {
-    try {
-      stdout = execFileSync(command, ["dashboard", "--timeout", "8"], {
-        encoding: "utf8",
-        timeout: INIT_TIMEOUT_MS,
-        maxBuffer: 16 * 1024 * 1024,
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      lastUsedCommand = command;
-      break;
-    } catch (error) {
-      if (isMissingBinary(error)) continue;
-      throw new Error(`\`${command} dashboard\` failed: ${messageOf(error)}`);
-    }
-  }
-  if (stdout === null) throw missingCommandError(candidates);
-  const value = dashboardSchema.parse(JSON.parse(stdout));
+  const value = dashboardSchema.parse(JSON.parse(runSync(["dashboard", "--timeout", "8"])));
   dashboardCache = { at: Date.now(), value };
   return value;
 }
@@ -237,7 +288,63 @@ export async function readUsage(providerId: string): Promise<UsageRow | null> {
     "--no-color",
   ]);
   const rows = z.array(usageRowSchema).parse(JSON.parse(stdout));
-  return rows.find((row) => row.provider === providerId) ?? rows[0] ?? null;
+  // A provider the CLI does not know makes it print every enabled provider instead,
+  // so an unmatched row means "no data", never "use the first one".
+  return rows.find((row) => row.provider === providerId) ?? null;
+}
+
+/** `id<TAB>name<TAB>path`, one user-installed provider plugin per line. */
+function parsePluginList(stdout: string): PluginProvider[] {
+  return stdout
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim().length > 0)
+    .map((line) => {
+      const [id = "", name = "", pluginPath = ""] = line.split("\t");
+      return { id: id.trim(), name: name.trim() || id.trim(), path: pluginPath.trim() };
+    })
+    .filter((plugin) => plugin.id.length > 0);
+}
+
+export async function listPluginProviders(): Promise<PluginProvider[]> {
+  return parsePluginList(await run(["plugins", "list"]));
+}
+
+export function listPluginProvidersSync(): PluginProvider[] {
+  return parsePluginList(runSync(["plugins", "list"]));
+}
+
+/** Enabled ids from the saved config, which covers plugins the dashboard never lists. */
+export function enabledProviderIdsSync(): Set<string> | null {
+  try {
+    return parseEnabledIds(runSync(["config", "dump", "--format", "json"]));
+  } catch {
+    return null;
+  }
+}
+
+export async function enabledProviderIds(): Promise<Set<string> | null> {
+  try {
+    return parseEnabledIds(await run(["config", "dump", "--format", "json"]));
+  } catch {
+    return null;
+  }
+}
+
+function parseEnabledIds(stdout: string): Set<string> {
+  const config = configSchema.parse(JSON.parse(stdout));
+  return new Set(
+    config.providers.filter((provider) => provider.enabled !== false).map((provider) => provider.id),
+  );
+}
+
+/**
+ * A plugin provider answers `plugins fetch`; it fails closed headless until CodexBar has an
+ * approval binding for it, and the error text explains that.
+ */
+export async function fetchPluginUsage(providerId: string): Promise<PluginUsage> {
+  const stdout = await run(["plugins", "fetch", providerId, "--json"]);
+  return pluginUsageSchema.parse(JSON.parse(stdout));
 }
 
 export function enabledProviders(dashboard: Dashboard): DashboardProvider[] {

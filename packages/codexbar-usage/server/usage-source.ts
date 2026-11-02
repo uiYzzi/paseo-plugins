@@ -1,8 +1,10 @@
 import type { PluginServerContext } from "@getpaseo/plugin/server";
 import {
+  balanceToneFromRemaining,
   hashAccountKey,
   toneFromUsedPct,
   type UsageAccount,
+  type UsageBalance,
   type UsageDetail,
   type UsageReport,
   type UsageScope,
@@ -11,10 +13,15 @@ import {
 import { z } from "zod";
 import {
   enabledProviders,
+  enabledProviderIdsSync,
+  fetchPluginUsage,
+  listPluginProvidersSync,
   readDashboard,
   readDashboardSync,
   readUsage,
   type DashboardProvider,
+  type PluginProvider,
+  type PluginUsage,
   type UsageRow,
 } from "./codexbar-cli";
 
@@ -287,6 +294,100 @@ function registerProviderSource(server: PluginServerContext, provider: Dashboard
   });
 }
 
+const PLUGIN_SLOT_LABELS: Record<"primary" | "secondary" | "tertiary", string> = {
+  primary: "Usage",
+  secondary: "Secondary usage",
+  tertiary: "Tertiary usage",
+};
+
+/**
+ * A provider plugin answers `plugins fetch`, whose payload carries its own windows, an
+ * optional provider cost and the rows the menu bar prints.
+ */
+async function buildPluginReport(providerId: string): Promise<UsageReport> {
+  const usage: PluginUsage = await fetchPluginUsage(providerId);
+  const windows: UsageWindow[] = [];
+  for (const slot of ["primary", "secondary", "tertiary"] as const) {
+    const window = usage[slot];
+    if (!window) continue;
+    windows.push(
+      makeWindow({
+        id: slot,
+        label: PLUGIN_SLOT_LABELS[slot],
+        shortLabel: shortLabelFor({
+          label: PLUGIN_SLOT_LABELS[slot],
+          windowMinutes: window.windowMinutes,
+        }),
+        usedPercent: window.usedPercent,
+        remainingPercent: window.remainingPercent,
+        resetsAt: window.resetsAt,
+      }),
+    );
+  }
+
+  const balances: UsageBalance[] = [];
+  const cost = usage.providerCost;
+  const hasCost =
+    cost && [cost.used, cost.limit, cost.balance].some((value) => typeof value === "number");
+  if (cost && hasCost) {
+    const currency = (cost.currencyCode ?? "").toUpperCase();
+    balances.push({
+      id: "cost",
+      label: cost.period ?? "Balance",
+      used: cost.used ?? null,
+      remaining: cost.balance ?? null,
+      limit: cost.limit ?? null,
+      // Paseo formats usd natively; anything else is shown as a credit amount.
+      unit: currency === "USD" ? "usd" : "credits",
+      resetsAt: usage.subscriptionRenewsAt ?? null,
+      tone: balanceToneFromRemaining(cost.balance ?? null),
+    });
+  }
+
+  if (windows.length === 0 && balances.length === 0) {
+    return { status: "error", error: "The CodexBar plugin returned no usage data." };
+  }
+
+  const details: UsageDetail[] = [];
+  (usage.details ?? []).forEach((section, sectionIndex) => {
+    section.rows.forEach((row, rowIndex) => {
+      const value = [row.value, row.secondaryValue].filter(Boolean).join(" · ");
+      details.push({ id: `detail-${sectionIndex}-${rowIndex}`, label: row.label, value });
+    });
+  });
+
+  const report: UsageReport = { status: "available", windows, balances, details };
+  const plan = usage.identity?.loginMethod ?? usage.loginMethod;
+  if (plan) report.planLabel = plan;
+  return report;
+}
+
+function registerPluginSource(server: PluginServerContext, provider: PluginProvider): void {
+  const account: UsageAccount = {
+    key: hashAccountKey(`codexbar:${provider.id}`),
+    input: { provider: provider.id },
+  };
+  server.registerUsageSource({
+    id: sourceIdFor(provider.id),
+    label: provider.name,
+    icon: "icon.svg",
+    input: inputSchema,
+    discover: async (scope: UsageScope) =>
+      scope.kind === "global" || sessionCandidates(scope.provider).includes(provider.id)
+        ? [account]
+        : [],
+    fetch: async (value) => {
+      const parsed = inputSchema.safeParse(value);
+      if (!parsed.success) return { status: "error", error: "Invalid CodexBar account input." };
+      try {
+        return await buildPluginReport(parsed.data.provider);
+      } catch (error) {
+        return { status: "error", error: error instanceof Error ? error.message : String(error) };
+      }
+    },
+  });
+}
+
 /** Keeps failures visible when the CLI is missing, instead of showing nothing at all. */
 function registerUnavailableSource(server: PluginServerContext, reason: string): void {
   server.registerUsageSource({
@@ -304,8 +405,11 @@ function registerUnavailableSource(server: PluginServerContext, reason: string):
 /**
  * CodexBar already knows each provider's display name, and a usage source carries a
  * single label, so every enabled provider becomes its own source. Paseo reads the
- * registrations once while the plugin starts, which is why the provider list is read
+ * registrations once while the plugin starts, which is why the provider lists are read
  * synchronously; enabling another provider in CodexBar takes a plugin reload.
+ *
+ * `dashboard` covers the built-in providers; provider plugins are only visible through
+ * `plugins list` plus the saved config.
  */
 export function contributeCodexbarUsage(server: PluginServerContext): () => void {
   let providers: DashboardProvider[] = [];
@@ -317,18 +421,38 @@ export function contributeCodexbarUsage(server: PluginServerContext): () => void
     registerUnavailableSource(server, reason);
     return () => {};
   }
-  if (providers.length === 0) {
+
+  const enabledIds = enabledProviderIdsSync();
+  let plugins: PluginProvider[] = [];
+  try {
+    plugins = listPluginProvidersSync().filter(
+      (plugin) => enabledIds === null || enabledIds.has(plugin.id),
+    );
+  } catch (error) {
+    console.error(
+      "[codexbar-usage] could not list CodexBar provider plugins:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  if (providers.length === 0 && plugins.length === 0) {
     registerUnavailableSource(
       server,
       "No CodexBar provider is enabled. Turn one on in CodexBar, then reload this plugin.",
     );
     return () => {};
   }
+
   const seen = new Set<string>();
   for (const provider of providers) {
     if (seen.has(provider.id)) continue;
     seen.add(provider.id);
     registerProviderSource(server, provider);
+  }
+  for (const plugin of plugins) {
+    if (seen.has(plugin.id)) continue;
+    seen.add(plugin.id);
+    registerPluginSource(server, plugin);
   }
   return () => {};
 }

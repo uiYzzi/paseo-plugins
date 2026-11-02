@@ -4,11 +4,13 @@
 
 ## 怎么工作
 
-插件在 daemon 机器上跑 CodexBar 自带的 CLI，把结果映射成 Paseo 的用量来源。CodexBar 里启用的每个 provider 独占一张卡片，卡片标题用 CodexBar 里的 provider 名字，所以页面上看到的是 `Kimi Code`、`DeepSeek`，而不是统一的 `CodexBar`。窗口的标签、已用百分比、重置时间、告警都保留；CodexBar 打印的余额和 pace 那一行变成进度条下面的详情行。
+插件在 daemon 机器上跑 CodexBar 自带的 CLI，把结果映射成 Paseo 的用量来源。CodexBar 里启用的每个 provider 独占一张卡片，卡片标题用 CodexBar 里的 provider 名字，所以页面上看到的是 `Kimi Code`、`DeepSeek`，而不是统一的 `CodexBar`。你自己给 CodexBar 装的 provider 插件同样会显示，走 CLI 的 plugins 子命令。窗口的标签、已用百分比、重置时间、告警都保留；CodexBar 打印的余额、pace、花费这些变成详情行或余额条。
 
 打开某个会话的用量弹层时，插件会去找那个会话所用的登录。会话的 provider 和 CodexBar 的 provider 对得上，就显示对应数字；对不上就什么都不显示。
 
 CLI 优先取 CodexBar App 包里的那个，找不到再用 daemon PATH 上的 `codexbar`。
+
+自己装的 provider 插件需要先在 CodexBar 里授权过，CLI 在 headless 下才取得到；没有授权时卡片上显示的是 CodexBar 的拒绝说明。
 
 ## 配置
 

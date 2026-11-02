@@ -4,11 +4,13 @@ Adds every provider that CodexBar tracks to Paseo's usage page, so the quotas yo
 
 ## How it works
 
-The plugin runs CodexBar's own CLI on the daemon machine and maps the result onto Paseo usage sources. Each enabled CodexBar provider becomes its own source, named with the provider name CodexBar shows, so the page reads `Kimi Code` and `DeepSeek` rather than one `CodexBar` card. Windows keep their labels, used percentages, reset times and warnings, and the balance or pace lines CodexBar prints become detail rows under the bars.
+The plugin runs CodexBar's own CLI on the daemon machine and maps the result onto Paseo usage sources. Each enabled CodexBar provider becomes its own source, named with the provider name CodexBar shows, so the page reads `Kimi Code` and `DeepSeek` rather than one `CodexBar` card. Provider plugins you installed in CodexBar appear the same way, read through the CLI's plugin commands. Windows keep their labels, used percentages, reset times and warnings, and the balance, pace or cost lines CodexBar prints become detail rows or balance bars under them.
 
 Opening a session's usage popover asks for the login that session runs on. When the session's provider matches a CodexBar provider, that provider's numbers appear there too; otherwise the popover shows nothing from this plugin.
 
 The plugin takes the CLI inside the CodexBar app bundle when it is present, and otherwise `codexbar` on the daemon's PATH.
+
+A provider plugin has to be approved in CodexBar before the CLI will fetch it headless. Without that approval the card shows CodexBar's refusal instead of numbers.
 
 ## Setup
 
