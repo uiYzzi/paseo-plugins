@@ -1,0 +1,29 @@
+{
+  "title": "CodexBar usage",
+  "status": {
+    "title": "CodexBar",
+    "info": "Every provider enabled in CodexBar gets its own card in the usage page.",
+    "checking": "Checking CodexBar…",
+    "checkFailed": "Could not read CodexBar status.",
+    "cliLabel": "Command line tool",
+    "missingLabel": "CodexBar is not installed",
+    "missingHint": "The plugin looks for codexbar on PATH, then for the CLI inside CodexBar.app, then for the path below. Until one of those runs, the usage page has nothing to show.",
+    "install": "Get CodexBar",
+    "providersLabel": "Enabled providers",
+    "providersHint_one": "{{count}} provider enabled. Turning a provider on or off in CodexBar needs a plugin reload.",
+    "providersHint_other": "{{count}} providers enabled. Turning a provider on or off in CodexBar needs a plugin reload.",
+    "providersEmpty": "No provider is enabled in CodexBar. Enable one, then reload this plugin.",
+    "check": "Check again"
+  },
+  "cliPath": {
+    "title": "Command line tool path",
+    "info": "Only used when codexbar is not on PATH and CodexBar.app is not in /Applications.",
+    "label": "CLI path",
+    "hint": "Full path to the CodexBar CLI. After changing it, reload the plugin so its providers are registered again.",
+    "placeholder": "/Applications/CodexBar.app/Contents/Helpers/CodexBarCLI",
+    "action": "Save",
+    "saving": "Saving…",
+    "done": "Saved. Reload the plugin to pick up a different provider list.",
+    "reset": "Reset"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "title": "CodexBar 用量",
+  "status": {
+    "title": "CodexBar",
+    "info": "CodexBar 里启用的每个 provider 在用量页各占一张卡片。",
+    "checking": "正在检查 CodexBar…",
+    "checkFailed": "读不到 CodexBar 状态。",
+    "cliLabel": "命令行工具",
+    "missingLabel": "没有装 CodexBar",
+    "missingHint": "插件依次查找 PATH 上的 codexbar、CodexBar.app 里的 CLI、以及下面这个路径。三者都不能跑之前，用量页没有东西可显示。",
+    "install": "获取 CodexBar",
+    "providersLabel": "已启用的 provider",
+    "providersHint_other": "已启用 {{count}} 个。在 CodexBar 里开关 provider 之后需要重载插件。",
+    "providersEmpty": "CodexBar 里没有启用任何 provider。启用一个之后重载本插件。",
+    "check": "重新检查"
+  },
+  "cliPath": {
+    "title": "命令行工具路径",
+    "info": "只在 PATH 上没有 codexbar、/Applications 里也没有 CodexBar.app 时才会用到。",
+    "label": "CLI 路径",
+    "hint": "填 CodexBar CLI 的完整路径。改完要重载插件，provider 列表才会重新注册。",
+    "placeholder": "/Applications/CodexBar.app/Contents/Helpers/CodexBarCLI",
+    "action": "保存",
+    "saving": "保存中…",
+    "done": "已保存。provider 列表要重载插件才会更新。",
+    "reset": "重置"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "paseo-codexbar-usage",
+  "name": "CodexBar usage",
+  "description": "Shows CodexBar provider quotas and balances in Paseo's usage page",
+  "media": [],
+  "translations": {
+    "zh-CN": {
+      "name": "CodexBar 用量",
+      "description": "在 Paseo 的用量页显示 CodexBar 各 provider 的额度和余额"
+    }
+  },
+  "requirements": {
+    "paseo": ">=0.11.0"
+  }
+}

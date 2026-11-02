@@ -7,6 +7,7 @@
 | 包 | 干什么 |
 |---|---|
 | [chat-sessions](./packages/chat-sessions/) | 项目选择器里多一个 «聊天»，每次新建会话都开一个新的临时目录 |
+| [codexbar-usage](./packages/codexbar-usage/) | 用量页里显示 CodexBar 各 provider 的额度和余额，一个 provider 一张卡片 |
 
 ## 装
 
