@@ -1,0 +1,11 @@
+{
+  "name": "paseo-packages",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uiYzzi/paseo_packages.git"
+  }
+}
