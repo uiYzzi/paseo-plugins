@@ -1,0 +1,42 @@
+name: publish
+
+on:
+  push:
+    tags: ["*-v*"]
+
+# No NPM_TOKEN: npm CLI exchanges this OIDC token for a short-lived publish
+# credential. Requires a trusted publisher for the package on npmjs.com whose
+# workflow filename matches this file exactly.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: parse tag
+        id: tag
+        run: |
+          TAG="${{ github.ref_name }}"
+          PKG="${TAG%%-v*}"
+          echo "package=$PKG" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # trusted publishing needs npm CLI >= 11.5.1 and Node >= 22.14
+      - name: upgrade npm
+        run: npm install -g npm@latest
+
+      - run: npm ci
+      - run: npm run typecheck -w packages/${{ steps.tag.outputs.package }}
+
+      # provenance attestations are generated automatically under OIDC
+      - run: npm publish --access public -w packages/${{ steps.tag.outputs.package }}
