@@ -27,6 +27,9 @@
     "zod": "^4.4.3",
     "@types/node": "^24.19.2"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/uiYzzi/paseo-plugins.git",
