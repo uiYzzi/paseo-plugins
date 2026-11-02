@@ -1,6 +1,6 @@
 {
   "name": "@uiyzzi/paseo-chat-sessions",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Paseo plugin: every new session in the chat project gets a fresh scratch directory",
   "files": [
     "paseo-plugin.json",
