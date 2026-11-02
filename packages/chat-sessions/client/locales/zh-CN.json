@@ -1,34 +1,59 @@
 {
   "title": "聊天会话",
-  "directory.title": "聊天目录",
-  "directory.info": "新建会话时选这个项目：每次都会在根目录下新建一个子目录，作为该会话的工作目录。",
-  "root.label": "根目录",
-  "root.hint": "支持 ~ 开头。留空会回退到主目录。",
-  "root.placeholder": "~/.PaseoChats",
-  "name.label": "项目名称",
-  "name.hint": "显示在项目选择器里的名字。",
-  "name.placeholder": "聊天",
-  "prune.label": "自动清理空的旧目录",
-  "prune.hint": "删除一周前创建、至今仍然为空的会话目录。",
-  "save.label": "保存设置",
-  "save.action": "保存",
-  "save.saving": "保存中…",
-  "save.done": "已保存。下一次新建会话会使用新的目录。",
-  "loading.label": "读取设置",
-  "loading.hint": "正在读取…",
-  "invalid.label": "设置不可用",
-  "invalid.action": "重置",
-  "project.title": "项目",
-  "project.checking": "正在检查…",
-  "project.registered": "已注册：{{path}}",
-  "project.register.label": "注册为 Paseo 项目",
-  "project.register.action": "注册",
-  "project.register.pending": "注册中…",
-  "project.register.hint": "目录存在但项目列表里看不到时用这个。",
-  "problem.rootCreateFailed": "无法创建 {{path}}：{{detail}}",
-  "problem.cliUnavailable": "无法运行 paseo 命令（{{detail}}）。请在终端运行：paseo project create {{path}}",
-  "problem.projectRegisterFailed": "注册项目失败：{{detail}}。请在终端运行：paseo project create {{path}}",
-  "problem.projectRenameFailed": "项目已注册，但改名失败：{{detail}}",
-  "problem.notRegistered": "目录 {{path}} 还没有注册为项目。在下面点“注册”，或在终端运行：paseo project create {{path}}",
-  "problem.settingsUnreadable": "插件设置无法读取，先在这个页面修复配置。"
+  "directory": {
+    "title": "聊天目录",
+    "info": "新建会话时选这个项目：每次都会在根目录下新建一个子目录，作为该会话的工作目录。"
+  },
+  "root": {
+    "label": "根目录",
+    "hint": "支持 ~ 开头。留空会回退到主目录。",
+    "placeholder": "~/.PaseoChats"
+  },
+  "name": {
+    "label": "项目名称",
+    "hint": "显示在项目选择器里的名字。",
+    "placeholder": "聊天"
+  },
+  "prune": {
+    "label": "自动清理空的旧目录",
+    "hint": "删除一周前创建、至今仍然为空的会话目录。"
+  },
+  "save": {
+    "label": "保存设置",
+    "action": "保存",
+    "saving": "保存中…",
+    "done": "已保存。下一次新建会话会使用新的目录。"
+  },
+  "loading": {
+    "label": "读取设置",
+    "hint": "正在读取…"
+  },
+  "invalid": {
+    "label": "设置不可用",
+    "action": "重置"
+  },
+  "project": {
+    "title": "项目",
+    "checking": "正在检查…",
+    "registered": "已注册：{{path}}",
+    "register": {
+      "label": "注册为 Paseo 项目",
+      "action": "注册",
+      "pending": "注册中…",
+      "hint": "目录存在但项目列表里看不到时用这个。"
+    },
+    "reset": {
+      "label": "按语言重置项目名",
+      "action": "重置",
+      "hint": "按当前 App 语言把项目名改回 Chat 或 聊天。"
+    }
+  },
+  "problem": {
+    "rootCreateFailed": "无法创建 {{path}}：{{detail}}",
+    "cliUnavailable": "无法运行 paseo 命令（{{detail}}）。请在终端运行：paseo project create {{path}}",
+    "projectRegisterFailed": "注册项目失败：{{detail}}。请在终端运行：paseo project create {{path}}",
+    "projectRenameFailed": "项目已注册，但改名失败：{{detail}}",
+    "notRegistered": "目录 {{path}} 还没有注册为项目。在下面点“注册”，或在终端运行：paseo project create {{path}}",
+    "settingsUnreadable": "插件设置无法读取，先在这个页面修复配置。"
+  }
 }

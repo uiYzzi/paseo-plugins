@@ -18,7 +18,7 @@ import { chatSettings, chatStatusRpc } from "../shared/chat";
 import { messages, PROBLEM_KEYS } from "./messages";
 
 export function ChatSettingsScreen(_props: PluginSurfaceProps) {
-  const { t } = useTranslation(messages);
+  const { t, locale } = useTranslation(messages);
   const settings = useSettings(chatSettings);
   const status = useRpc(chatStatusRpc);
   const queryClient = useQueryClient();
@@ -32,12 +32,18 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
     queryFn: () => status({ register: false }),
     staleTime: 10_000,
   });
+  const refreshStatus = () => {
+    void queryClient.invalidateQueries({ queryKey: ["chat", "status"] });
+  };
   const registerMutation = useMutation({
-    mutationFn: () => status({ register: true }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["chat", "status"] });
-    },
+    mutationFn: () => status({ register: true, locale }),
+    onSuccess: refreshStatus,
   });
+  const resetNameMutation = useMutation({
+    mutationFn: () => status({ rename: true, locale }),
+    onSuccess: refreshStatus,
+  });
+  const projectBusy = registerMutation.isPending || resetNameMutation.isPending;
 
   if (settings.status === "loading") {
     return (
@@ -157,9 +163,16 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
                 ? t("project.register.pending")
                 : t("project.register.action")
             }
-            disabled={registerMutation.isPending}
+            disabled={projectBusy}
             onPress={() => registerMutation.mutate()}
             hint={t("project.register.hint")}
+          />
+          <SettingsAction
+            label={t("project.reset.label")}
+            actionLabel={t("project.reset.action")}
+            disabled={projectBusy || !projectStatus?.registered}
+            onPress={() => resetNameMutation.mutate()}
+            hint={t("project.reset.hint")}
           />
         </SettingsCard>
       </SettingsSection>

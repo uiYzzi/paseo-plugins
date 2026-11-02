@@ -76,7 +76,9 @@ export default function contribute(server: PluginServerContext) {
     }
   }
 
-  const ensureProject = async (register: boolean) => {
+  const ensureProject = async (
+    options: { register: boolean; rename?: boolean; locale?: string | null },
+  ) => {
     const current = await readSettings();
     if (!current) {
       return {
@@ -88,10 +90,12 @@ export default function contribute(server: PluginServerContext) {
         detail: null,
       };
     }
-    return ensureChatProject(current, { register });
+    return ensureChatProject(current, options);
   };
 
-  server.handle(chatStatusRpc, async ({ register }) => ensureProject(register));
+  server.handle(chatStatusRpc, async ({ register, rename, locale }) =>
+    ensureProject({ register, rename, locale }),
+  );
 
   // Picking the chat project creates a workspace at the root directory; each request
   // is redirected into a fresh child directory so every session gets its own folder.

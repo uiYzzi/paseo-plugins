@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import type { ChatProblem } from "../shared/chat";
+import { DEFAULT_PROJECT_NAME, resolveNewProjectName } from "../shared/chat";
 
 const execFileAsync = promisify(execFile);
 
@@ -166,9 +167,17 @@ let inFlight: Promise<ChatProjectStatus> | null = null;
  * carries the configured name. Registration goes through the `paseo` CLI because the
  * plugin SDK can list projects but not add or rename them.
  */
+export interface ChatEnsureOptions {
+  register: boolean;
+  /** Force the project name to this app language's default. */
+  rename?: boolean;
+  /** App language; only used when the plugin picks the name itself. */
+  locale?: string | null;
+}
+
 export function ensureChatProject(
   settings: ChatProjectSettings,
-  options: { register: boolean },
+  options: ChatEnsureOptions,
 ): Promise<ChatProjectStatus> {
   if (inFlight) return inFlight;
   const run = registerChatProject(settings, options).finally(() => {
@@ -180,10 +189,12 @@ export function ensureChatProject(
 
 async function registerChatProject(
   settings: ChatProjectSettings,
-  options: { register: boolean },
+  options: ChatEnsureOptions,
 ): Promise<ChatProjectStatus> {
   const root = resolveRootDirectory(settings.rootDirectory);
-  const projectName = settings.projectName.trim() || "聊天";
+  const configuredName = settings.projectName.trim() || DEFAULT_PROJECT_NAME;
+  const projectName = resolveNewProjectName(configuredName, options.locale);
+  const namesItself = configuredName === DEFAULT_PROJECT_NAME;
   const base: ChatProjectStatus = {
     rootDirectory: root,
     projectName,
@@ -209,12 +220,14 @@ async function registerChatProject(
   }
 
   let project = first.projects.find((entry) => samePath(entry.path, root)) ?? null;
+  let created = false;
 
   if (!project && options.register) {
-    const created = await runPaseoCli(["project", "create", root]);
-    if (!created.ok) {
-      return { ...base, problem: "projectRegisterFailed", detail: created.error };
+    const made = await runPaseoCli(["project", "create", root]);
+    if (!made.ok) {
+      return { ...base, problem: "projectRegisterFailed", detail: made.error };
     }
+    created = true;
     const second = await listProjects();
     if (!second.projects) return { ...base, problem: "cliUnavailable", detail: second.error };
     project = second.projects.find((entry) => samePath(entry.path, root)) ?? null;
@@ -226,13 +239,30 @@ async function registerChatProject(
 
   let problem: ChatProblem | null = null;
   let detail: string | null = null;
-  if (project.name !== projectName) {
-    const renamed = await runPaseoCli(["project", "rename", project.projectId, projectName]);
-    if (!renamed.ok) {
+  // Rename when the plugin just named the project, when the user asked for the app-language
+  // name, or when a stored custom name drifted. A daemon-side pass never renames a default
+  // name, so a name chosen by one app language never flips under another.
+  let targetName: string | null = null;
+  if (created) targetName = projectName;
+  else if (options.rename) targetName = namesItself ? projectName : configuredName;
+  else if (!namesItself) targetName = configuredName;
+
+  let actualName = project.name;
+  if (targetName && project.name !== targetName) {
+    const renamed = await runPaseoCli(["project", "rename", project.projectId, targetName]);
+    if (renamed.ok) actualName = targetName;
+    else {
       problem = "projectRenameFailed";
       detail = renamed.error;
     }
   }
 
-  return { ...base, projectId: project.projectId, registered: true, problem, detail };
+  return {
+    ...base,
+    projectName: actualName || projectName,
+    projectId: project.projectId,
+    registered: true,
+    problem,
+    detail,
+  };
 }

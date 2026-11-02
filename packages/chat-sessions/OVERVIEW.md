@@ -16,6 +16,9 @@ Settings, then Plugins, then this plugin:
 - Project name: the label in the project picker.
 - Clean up empty directories: delete session directories that were created a week ago and are still empty. Directories touched within the week are left alone.
 - Register as a Paseo project: register the directory by hand when the project list does not show it.
+- Reset project name to app language: rename the project to `Chat` or `聊天` following the app language.
+
+The interface follows the app language. The project name does not: it is data the daemon stores, shared by every client and by the CLI, so it is fixed once written. Opening the settings screen in another language leaves it alone until you press the reset row.
 
 ## Permissions and limits
 
