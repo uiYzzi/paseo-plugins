@@ -1,4 +1,4 @@
-# paseo-packages
+# paseo-plugins
 
 我的 Paseo 插件合集。每个包一个目录，装到 Paseo 就能用。
 
@@ -19,7 +19,7 @@ paseo plugin install ./packages/chat-sessions
 ## 目录约定
 
 ```
-paseo-packages/
+paseo-plugins/
   package.json        npm workspace 根
   packages/
     <package>/
