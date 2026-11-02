@@ -4,6 +4,7 @@ import { mkdir, readdir, rmdir, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import type { ChatProblem } from "../shared/chat";
 
 const execFileAsync = promisify(execFile);
 
@@ -31,7 +32,9 @@ export interface ChatProjectStatus {
   projectName: string;
   projectId: string | null;
   registered: boolean;
-  message: string | null;
+  /** Localized by the app; the daemon has no locale. */
+  problem: ChatProblem | null;
+  detail: string | null;
 }
 
 interface CliProject {
@@ -119,7 +122,7 @@ async function runPaseoCli(args: readonly string[]): Promise<CliResult> {
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       if (code === "ENOENT") {
-        lastError = `未找到 paseo 命令`;
+        lastError = `paseo not found`;
         continue;
       }
       const stderr = (error as { stderr?: string }).stderr?.trim();
@@ -135,7 +138,7 @@ async function listProjects(): Promise<{ projects: CliProject[] | null; error: s
   if (!result.ok) return { projects: null, error: result.error };
   try {
     const parsed: unknown = JSON.parse(result.stdout);
-    if (!Array.isArray(parsed)) return { projects: null, error: "paseo project ls 输出无法解析" };
+    if (!Array.isArray(parsed)) return { projects: null, error: "paseo project ls printed no array" };
     const projects = parsed.flatMap((entry): CliProject[] => {
       if (typeof entry !== "object" || entry === null) return [];
       const record = entry as Record<string, unknown>;
@@ -186,7 +189,8 @@ async function registerChatProject(
     projectName,
     projectId: null,
     registered: false,
-    message: null,
+    problem: null,
+    detail: null,
   };
 
   try {
@@ -194,13 +198,14 @@ async function registerChatProject(
   } catch (error) {
     return {
       ...base,
-      message: `无法创建目录 ${root}：${error instanceof Error ? error.message : String(error)}`,
+      problem: "rootCreateFailed",
+      detail: error instanceof Error ? error.message : String(error),
     };
   }
 
   const first = await listProjects();
   if (!first.projects) {
-    return { ...base, message: first.error };
+    return { ...base, problem: "cliUnavailable", detail: first.error };
   }
 
   let project = first.projects.find((entry) => samePath(entry.path, root)) ?? null;
@@ -208,28 +213,26 @@ async function registerChatProject(
   if (!project && options.register) {
     const created = await runPaseoCli(["project", "create", root]);
     if (!created.ok) {
-      return {
-        ...base,
-        message: `注册项目失败：${created.error ?? "未知错误"}。可在终端运行：paseo project create ${root}`,
-      };
+      return { ...base, problem: "projectRegisterFailed", detail: created.error };
     }
     const second = await listProjects();
-    if (!second.projects) return { ...base, message: second.error };
+    if (!second.projects) return { ...base, problem: "cliUnavailable", detail: second.error };
     project = second.projects.find((entry) => samePath(entry.path, root)) ?? null;
   }
 
   if (!project) {
-    return {
-      ...base,
-      message: `目录 ${root} 还没有注册为项目。在设置里点“注册项目”，或在终端运行：paseo project create ${root}`,
-    };
+    return { ...base, problem: "notRegistered", detail: null };
   }
 
-  let message: string | null = null;
+  let problem: ChatProblem | null = null;
+  let detail: string | null = null;
   if (project.name !== projectName) {
     const renamed = await runPaseoCli(["project", "rename", project.projectId, projectName]);
-    if (!renamed.ok) message = `项目已注册，但改名失败：${renamed.error ?? "未知错误"}`;
+    if (!renamed.ok) {
+      problem = "projectRenameFailed";
+      detail = renamed.error;
+    }
   }
 
-  return { ...base, projectId: project.projectId, registered: true, message };
+  return { ...base, projectId: project.projectId, registered: true, problem, detail };
 }

@@ -4,6 +4,7 @@ import { z } from "zod";
 /** Default place where chat session directories are created. */
 export const DEFAULT_ROOT_DIRECTORY = "~/.PaseoChats";
 export const DEFAULT_PROJECT_NAME = "聊天";
+
 export const chatSettings = defineSettings({
   id: "chat",
   scope: "host",
@@ -18,6 +19,21 @@ export const chatSettings = defineSettings({
   }),
 });
 
+/**
+ * The daemon has no locale, so it reports a code the app localizes, plus the raw
+ * detail (path or command error) that goes into the message.
+ */
+export const chatProblem = z.enum([
+  "rootCreateFailed",
+  "cliUnavailable",
+  "projectRegisterFailed",
+  "projectRenameFailed",
+  "notRegistered",
+  "settingsUnreadable",
+]);
+
+export type ChatProblem = z.infer<typeof chatProblem>;
+
 export const chatStatusRpc = defineRpc({
   name: "chat.status",
   input: z.object({ register: z.boolean().default(false) }),
@@ -26,6 +42,9 @@ export const chatStatusRpc = defineRpc({
     projectName: z.string(),
     projectId: z.string().nullable(),
     registered: z.boolean(),
-    message: z.string().nullable(),
+    problem: chatProblem.nullable(),
+    detail: z.string().nullable(),
   }),
 });
+
+export type ChatStatus = z.infer<typeof chatStatusRpc.output>;

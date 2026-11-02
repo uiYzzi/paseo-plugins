@@ -84,7 +84,8 @@ export default function contribute(server: PluginServerContext) {
         projectName: "",
         projectId: null,
         registered: false,
-        message: "插件设置无法读取，先在插件设置页修复配置。",
+        problem: "settingsUnreadable" as const,
+        detail: null,
       };
     }
     return ensureChatProject(current, { register });

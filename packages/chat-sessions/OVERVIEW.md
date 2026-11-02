@@ -1,24 +1,24 @@
-# 聊天会话
+# Chat sessions
 
-在 Paseo 的项目选择器里加一个当作草稿纸用的 «聊天» 项目。选中它新建会话时，插件会在配置的根目录下创建一个新的子目录，会话就在那个目录里跑。适合临时提问、写点脚本、试提示词，不用把文件落地到真正的仓库里。
+Adds a scratchpad project to Paseo's project picker. When you start a session in that project, the plugin creates a fresh child directory under a root you choose, and the session runs there. It keeps throwaway questions, prompt experiments and one-off scripts out of your real repositories.
 
-## 工作方式
+## How it works
 
-插件把根目录（默认 `~/.PaseoChats`）注册为一个 Paseo 项目，并把名字改成 «聊天»。在新建会话界面选中该项目后，Paseo 会请求在这个目录创建 workspace，插件把这个请求改写到 `chat-<年月日>-<时分秒>-<随机>` 子目录，于是每次新建会话都有自己的目录和项目条目。所有会话目录仍然归在同一个 «聊天» 项目下，侧边栏不会堆出一堆项目。
+The plugin registers the root directory (default `~/.PaseoChats`) as a Paseo project and names it. When you pick that project on the new session screen, Paseo asks for a workspace at the root; the plugin rewrites the request to a new `chat-<date>-<time>-<random>` child directory, so every session gets its own folder. All of those folders stay inside the one project, so the sidebar does not fill up with projects.
 
-会话目录默认不含任何文件，不是 git 仓库，所以不会产生 diff 或分支噪音。
+Session directories start empty and are not git repositories, so they produce no diffs or branches.
 
-## 设置
+## Settings
 
-设置 → 插件 → 聊天会话：
+Settings, then Plugins, then this plugin:
 
-- 根目录：会话目录放在哪里，支持 `~` 开头。
-- 项目名称：项目选择器里显示的名字，默认 «聊天»。
-- 自动清理空的旧目录：删除一周前创建、至今仍为空的会话目录，一周内动过的不会动。
-- 注册为 Paseo 项目：目录存在但项目列表里看不到时手动补注册。
+- Root directory: where session directories live. A leading `~` is expanded.
+- Project name: the label in the project picker.
+- Clean up empty directories: delete session directories that were created a week ago and are still empty. Directories touched within the week are left alone.
+- Register as a Paseo project: register the directory by hand when the project list does not show it.
 
-## 权限与限制
+## Permissions and limits
 
-插件在 daemon 机器上以你的权限运行，会创建和删除根目录下的空文件夹，并调用 `paseo project` 命令注册或重命名项目。插件不读取会话内容，不联网，也不写插件目录之外的路径（除了它自己创建的空目录清理）。
+The plugin runs with your permissions on the daemon host. It creates directories under the configured root, deletes the empty old ones, and runs `paseo project` to register or rename the project. It does not read session content, does not use the network, and writes nothing outside the directories it created.
 
-要在项目选择器里直接选中它，需要 Paseo 0.15 或更新的 daemon 支持 `workspace.create.before` 钩子。已存在于聊天根目录下的旧会话目录不会被复用：从项目选择器新建会话总会创建新目录。
+Creating workspaces through `workspace.create.before` needs a daemon that exposes lifecycle hooks. Sessions you add inside an existing chat workspace keep sharing that workspace's directory; only starting a session from the project picker creates a new one.

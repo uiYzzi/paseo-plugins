@@ -1,4 +1,9 @@
-import { useRpc, useSettings, type PluginSurfaceProps } from "@getpaseo/plugin/client";
+import {
+  useRpc,
+  useSettings,
+  useTranslation,
+  type PluginSurfaceProps,
+} from "@getpaseo/plugin/client";
 import {
   SettingsAction,
   SettingsCard,
@@ -10,15 +15,17 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { chatSettings, chatStatusRpc } from "../shared/chat";
+import { messages, PROBLEM_KEYS } from "./messages";
 
 export function ChatSettingsScreen(_props: PluginSurfaceProps) {
+  const { t } = useTranslation(messages);
   const settings = useSettings(chatSettings);
   const status = useRpc(chatStatusRpc);
   const queryClient = useQueryClient();
   const [rootDraft, setRootDraft] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [pruneDraft, setPruneDraft] = useState<boolean | null>(null);
-  const [savedNote, setSavedNote] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
   const statusQuery = useQuery({
     queryKey: ["chat", "status"],
@@ -34,9 +41,9 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
 
   if (settings.status === "loading") {
     return (
-      <SettingsSection title="聊天会话">
+      <SettingsSection title={t("title")}>
         <SettingsCard>
-          <SettingsRow label="读取设置" hint="正在读取…" />
+          <SettingsRow label={t("loading.label")} hint={t("loading.hint")} />
         </SettingsCard>
       </SettingsSection>
     );
@@ -44,12 +51,12 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
 
   if (settings.status === "error" || settings.status === "invalid") {
     return (
-      <SettingsSection title="聊天会话">
+      <SettingsSection title={t("title")}>
         <SettingsCard>
-          <SettingsRow label="设置不可用" error={settings.error} />
+          <SettingsRow label={t("invalid.label")} error={settings.error} />
           <SettingsAction
-            label="恢复默认设置"
-            actionLabel="重置"
+            label={t("invalid.label")}
+            actionLabel={t("invalid.action")}
             onPress={() => {
               void settings.reset();
             }}
@@ -69,7 +76,7 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
     pruneValue !== values.pruneEmptyDirectories;
 
   const save = async () => {
-    setSavedNote(null);
+    setSaved(false);
     const ok = await settings.save(
       {
         rootDirectory: rootValue.trim(),
@@ -82,70 +89,77 @@ export function ChatSettingsScreen(_props: PluginSurfaceProps) {
       setRootDraft(null);
       setNameDraft(null);
       setPruneDraft(null);
-      setSavedNote("已保存。下一次新建会话会使用新的目录。");
+      setSaved(true);
     }
   };
 
   const projectStatus = registerMutation.data ?? statusQuery.data;
-  const statusHint = projectStatus
-    ? projectStatus.registered
-      ? `已注册：${projectStatus.rootDirectory}`
-      : projectStatus.message ?? "尚未注册"
-    : "正在检查…";
+  const projectProblem = projectStatus?.problem
+    ? t(PROBLEM_KEYS[projectStatus.problem], {
+        path: projectStatus.rootDirectory || projectStatus.projectName,
+        detail: projectStatus.detail ?? "",
+      })
+    : null;
+  const statusHint = projectProblem
+    ? projectProblem
+    : projectStatus
+      ? t("project.registered", { path: projectStatus.rootDirectory })
+      : t("project.checking");
 
   return (
     <>
-      <SettingsSection
-        title="聊天目录"
-        info="在新建会话时选择这个项目，每次都会在根目录下新建一个子目录作为该会话的工作目录。"
-      >
+      <SettingsSection title={t("directory.title")} info={t("directory.info")}>
         <SettingsCard>
           <SettingsInput
-            label="根目录"
-            hint="支持 ~ 开头。留空会回退到主目录。"
+            label={t("root.label")}
+            hint={t("root.hint")}
             initialValue={values.rootDirectory}
-            placeholder="~/.PaseoChats"
+            placeholder={t("root.placeholder")}
             onChangeText={setRootDraft}
           />
           <SettingsInput
-            label="项目名称"
-            hint="显示在项目选择器里的名字。"
+            label={t("name.label")}
+            hint={t("name.hint")}
             initialValue={values.projectName}
-            placeholder="聊天"
+            placeholder={t("name.placeholder")}
             onChangeText={setNameDraft}
           />
           <SettingsSwitch
-            label="自动清理空的旧目录"
-            hint="删除一周前创建、至今仍然为空的会话目录。"
+            label={t("prune.label")}
+            hint={t("prune.hint")}
             value={pruneValue}
             onValueChange={setPruneDraft}
           />
           <SettingsAction
-            label="保存设置"
-            actionLabel={settings.saving ? "保存中…" : "保存"}
+            label={t("save.label")}
+            actionLabel={settings.saving ? t("save.saving") : t("save.action")}
             disabled={!dirty || settings.saving}
             onPress={() => {
               void save();
             }}
             error={settings.saveError}
-            hint={savedNote ?? undefined}
+            hint={saved ? t("save.done") : undefined}
           />
         </SettingsCard>
       </SettingsSection>
 
-      <SettingsSection title="项目">
+      <SettingsSection title={t("project.title")}>
         <SettingsCard>
           <SettingsRow
-            label={projectStatus?.projectName || nameValue}
+            label={projectStatus?.projectName || values.projectName}
             hint={statusHint}
-            error={projectStatus && !projectStatus.registered ? projectStatus.message : null}
+            error={projectProblem}
           />
           <SettingsAction
-            label="注册为 Paseo 项目"
-            actionLabel={registerMutation.isPending ? "注册中…" : "注册"}
+            label={t("project.register.label")}
+            actionLabel={
+              registerMutation.isPending
+                ? t("project.register.pending")
+                : t("project.register.action")
+            }
             disabled={registerMutation.isPending}
             onPress={() => registerMutation.mutate()}
-            hint="目录存在但项目列表里看不到时用这个。"
+            hint={t("project.register.hint")}
           />
         </SettingsCard>
       </SettingsSection>
