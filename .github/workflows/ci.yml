@@ -17,4 +17,4 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - run: npm run typecheck -w packages/chat-sessions
+      - run: npm run typecheck --workspaces --if-present
