@@ -1,6 +1,6 @@
 {
   "id": "paseo-chat-sessions",
-  "name": "聊天会话",
+  "name": "Chat sessions",
   "media": [],
   "requirements": {
     "paseo": ">=0.14.0"
