@@ -67,6 +67,17 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+/**
+ * Matches exactly what {@link sessionDirectoryName} produces: `chat-<date>-<time>-<random>`.
+ * Cleanup keys off this shape so it only ever touches directories the plugin made.
+ */
+const SESSION_DIRECTORY_PATTERN = /^chat-\d{8}-\d{6}-[0-9a-f]{4}$/;
+
+/** True only for session directory names this plugin generates. */
+export function isSessionDirectoryName(name: string): boolean {
+  return SESSION_DIRECTORY_PATTERN.test(name);
+}
+
 /** A sortable, unique directory name for one chat session. */
 export function sessionDirectoryName(now: Date = new Date()): string {
   const stamp = [
@@ -85,7 +96,11 @@ export async function createSessionDirectory(root: string): Promise<string> {
   return target;
 }
 
-/** Removes empty session directories that nobody touched for a week. */
+/**
+ * Removes empty session directories that nobody touched for a week. Only names created by
+ * {@link sessionDirectoryName} qualify, so an unrelated empty directory that happens to sit
+ * under the root (`templates/`, say) is never deleted, even when it is old.
+ */
 export async function pruneEmptyDirectories(
   root: string,
   now: number = Date.now(),
@@ -94,6 +109,7 @@ export async function pruneEmptyDirectories(
   const removed: string[] = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
+    if (!isSessionDirectoryName(entry.name)) continue;
     const target = path.join(root, entry.name);
     try {
       const info = await stat(target);

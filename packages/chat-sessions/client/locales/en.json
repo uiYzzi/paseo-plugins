@@ -16,7 +16,7 @@
   },
   "prune": {
     "label": "Clean up empty directories",
-    "hint": "Delete session directories that were created a week ago and are still empty."
+    "hint": "Delete empty chat-<date>-<time>-<random> session directories a week old. Other folders in the root are never touched."
   },
   "save": {
     "label": "Save settings",

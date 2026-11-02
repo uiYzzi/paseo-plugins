@@ -14,7 +14,7 @@ Settings, then Plugins, then this plugin:
 
 - Root directory: where session directories live. A leading `~` is expanded.
 - Project name: the label in the project picker.
-- Clean up empty directories: delete session directories that were created a week ago and are still empty. Directories touched within the week are left alone.
+- Clean up empty directories: delete `chat-<date>-<time>-<random>` session directories that were created a week ago and are still empty. Directories touched within the week are left alone, and anything else under the root is never deleted — the plugin only removes directories whose name it generated.
 - Register as a Paseo project: register the directory by hand when the project list does not show it.
 - Reset project name to app language: rename the project to `Chat` or `聊天` following the app language.
 
@@ -22,6 +22,6 @@ The interface follows the app language. The project name does not: it is data th
 
 ## Permissions and limits
 
-The plugin runs with your permissions on the daemon host. It creates directories under the configured root, deletes the empty old ones, and runs `paseo project` to register or rename the project. It does not read session content, does not use the network, and writes nothing outside the directories it created.
+The plugin runs with your permissions on the daemon host. It creates directories under the configured root, deletes its own empty old session directories, and runs `paseo project` to register or rename the project. It does not read session content, does not use the network, and writes nothing outside the directories it created.
 
 Creating workspaces through `workspace.create.before` needs a daemon that exposes lifecycle hooks. Sessions you add inside an existing chat workspace keep sharing that workspace's directory; only starting a session from the project picker creates a new one.
