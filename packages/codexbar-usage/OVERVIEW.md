@@ -8,7 +8,7 @@ The plugin runs CodexBar's own CLI on the daemon machine and maps the result ont
 
 Opening a session's usage popover asks for the login that session runs on. When the session's provider matches a CodexBar provider, that provider's numbers appear there too; otherwise the popover shows nothing from this plugin.
 
-The plugin takes the CLI inside the CodexBar app bundle when it is present, and otherwise `codexbar` on the daemon's PATH.
+The plugin finds the CLI in this order: `CODEXBAR_BIN`, `codexbar` on the daemon's PATH, the CLI inside CodexBar.app, then a path saved in the plugin's settings.
 
 A provider plugin has to be approved in CodexBar before the CLI will fetch it headless. Without that approval the card shows CodexBar's refusal instead of numbers.
 

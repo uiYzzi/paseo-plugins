@@ -8,7 +8,7 @@
 
 打开某个会话的用量弹层时，插件会去找那个会话所用的登录。会话的 provider 和 CodexBar 的 provider 对得上，就显示对应数字；对不上就什么都不显示。
 
-CLI 优先取 CodexBar App 包里的那个，找不到再用 daemon PATH 上的 `codexbar`。
+CLI 查找顺序：`CODEXBAR_BIN`、daemon PATH 上的 `codexbar`、CodexBar.app 里的 CLI，最后是设置页里填的路径。
 
 自己装的 provider 插件需要先在 CodexBar 里授权过，CLI 在 headless 下才取得到；没有授权时卡片上显示的是 CodexBar 的拒绝说明。
 

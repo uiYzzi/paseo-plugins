@@ -25,7 +25,6 @@ paseo plugin reload paseo-codexbar-usage
 - 内置 provider 走 `codexbar dashboard` + `codexbar usage --format json`；自己装的 provider 插件走 `codexbar plugins list` + `codexbar plugins fetch <id> --json`（`dashboard` 不列插件 provider，`usage --provider <插件 id>` 会默默返回全部内置 provider，所以两者必须分开）。
 - 插件 provider 的窗口、`providerCost`（USD 余额条）、`details[].rows`（详情行）、`loginMethod`（plan 微标）分开映射。
 - 会话弹层：把会话 provider 拆成候选 id（`pi/deepseek/deepseek-flash` → `deepseek`；`pi/zenai/...` → `zenai`；`codex` → `codex`），命中才返回数据。
-- CLI 查找顺序：`CODEXBAR_BIN` → PATH 上的 `codexbar` → `/Applications/CodexBar.app/Contents/Helpers/CodexBarCLI` → 设置页里填的路径。
 - `dashboard` 结果在进程内缓存 20 秒（discover 和紧随其后的 fetch 共用一次调用），Paseo 自己对每个账户再缓存 5 分钟。
 
 ## 遇到的坑
@@ -37,4 +36,4 @@ paseo plugin reload paseo-codexbar-usage
 - `dashboard` 的 `kind` 描述的是槽位不是窗口时长：Kimi 的 5 小时窗口标成 `weekly`，余额窗口标成 `session`。`shortLabel` 优先用 `usage` 里的 `windowMinutes`，其次从 label 里解析，余额/credit 一律不给短标签。
 - CodexBar 的 `pi` provider 指的是 Pi 订阅本身，和 `pi/deepseek/...` 这种会话跑的不是同一个账户，所以 `pi`/`omp` 前缀的会话只认 vendor 段。
 - `CodexBar.app` 里没有 `codexbar://` URL scheme，也没有 socket / XPC 接口，程序接口是包内的 `Contents/Helpers/CodexBarCLI`（13 个子命令）和 `codexbar serve` 那个 HTTP 服务。
-- daemon 的 PATH 往往很短，所以默认走 App 包里的绝对路径，而不是依赖 `codexbar` 在 PATH 上。
+- daemon 的 PATH 往往很短，所以 PATH 上找不到 `codexbar` 时会回落到 App 包里的绝对路径。
