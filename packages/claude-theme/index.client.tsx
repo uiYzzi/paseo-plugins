@@ -18,9 +18,9 @@ export default function contribute(client: PluginClientContext) {
       accent: "#D97757",
       mutedForeground: "#706F6A",
       // Paseo maps `ring` to both the sidebar selection background and the
-      // extra-muted text color in light themes, so this value has to stay
-      // readable as text: #A8A49C matches the built-in light extra-muted tone.
-      ring: "#A8A49C"
+      // extra-muted text color in light themes, so it lands between the two
+      // official values (#d4d4d8 selection, #a1a1aa extra muted text).
+      ring: "#BDB6A4"
     }
   });
 
