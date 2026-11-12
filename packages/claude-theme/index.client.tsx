@@ -17,8 +17,10 @@ export default function contribute(client: PluginClientContext) {
       border: "#DDDCD6",
       accent: "#D97757",
       mutedForeground: "#706F6A",
-      // Paseo uses `ring` as the sidebar selection background in light themes.
-      ring: "#E3DFD5"
+      // Paseo maps `ring` to both the sidebar selection background and the
+      // extra-muted text color in light themes, so this value has to stay
+      // readable as text: #A8A49C matches the built-in light extra-muted tone.
+      ring: "#A8A49C"
     }
   });
 
