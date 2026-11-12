@@ -1,0 +1,15 @@
+{
+  "id": "paseo-claude-theme",
+  "name": "Claude",
+  "description": "Warm neutral Paseo theme inspired by Claude's default interface",
+  "media": [],
+  "translations": {
+    "zh-CN": {
+      "name": "Claude 默认主题",
+      "description": "复刻 Claude 默认界面的暖中性色 Paseo 主题"
+    }
+  },
+  "requirements": {
+    "paseo": ">=0.15.0"
+  }
+}
