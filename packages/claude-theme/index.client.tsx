@@ -17,7 +17,8 @@ export default function contribute(client: PluginClientContext) {
       border: "#DDDCD6",
       accent: "#D97757",
       mutedForeground: "#706F6A",
-      ring: "#D97757"
+      // Paseo uses `ring` as the sidebar selection background in light themes.
+      ring: "#E3DFD5"
     }
   });
 
