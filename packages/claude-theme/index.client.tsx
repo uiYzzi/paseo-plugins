@@ -15,10 +15,9 @@ export default function contribute(client: PluginClientContext) {
       raised: "#FFFFFF",
       control: "#EFEEE9",
       border: "#DDDCD6",
-      // Dark enough for Paseo to derive a white accentForeground on selected rows.
-      accent: "#A84E32",
+      accent: "#D97757",
       mutedForeground: "#706F6A",
-      ring: "#A84E32"
+      ring: "#D97757"
     }
   });
 
